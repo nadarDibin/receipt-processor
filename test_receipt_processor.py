@@ -220,7 +220,7 @@ class TestPDFProcessing(TestReceiptProcessor):
             
             try:
                 # This should attempt OCR fallback
-                with patch.object(processor, 'extract_text_tesseract', return_value="Mock OCR text"):
+                with patch.object(processor, '_extract_text_tesseract', return_value="Mock OCR text"):
                     result = processor.extract_text(tmp_path)
                     self.assertEqual(result, "Mock OCR text")
             finally:
