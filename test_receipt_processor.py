@@ -51,17 +51,21 @@ class TestAmountExtraction(TestReceiptProcessor):
                 self.assertEqual(result, expected, f"Failed for line: {line}")
     
     def test_extract_amount_from_line_dollar_symbol(self):
-        """Test extraction of amounts with $ symbol."""
+        """Test extraction of amounts with $ symbol (converted to INR)."""
+        # Using default exchange rate of 83.0
         test_cases = [
-            ("$23.60 USD due", [23.60]),
-            ("Total $20.00", [20.00]),
-            ("Tax (18% on $20.00) $3.60", [20.00, 3.60]),
+            ("$23.60 USD due", [23.60 * 83.0]),  # 1958.8
+            ("Total $20.00", [20.00 * 83.0]),    # 1660.0
+            ("Tax (18% on $20.00) $3.60", [20.00 * 83.0, 3.60 * 83.0]),  # [1660.0, 298.8]
         ]
         
         for line, expected in test_cases:
             with self.subTest(line=line):
                 result = self.processor.extract_amount_from_line(line)
-                self.assertEqual(sorted(result), sorted(expected))
+                # Compare with small tolerance for floating point precision
+                self.assertEqual(len(result), len(expected))
+                for r, e in zip(sorted(result), sorted(expected)):
+                    self.assertAlmostEqual(r, e, places=1)
     
     def test_extract_amount_from_line_rs_formats(self):
         """Test extraction with Rs and INR formats."""
@@ -262,7 +266,7 @@ class TestKnownReceiptValidation(TestReceiptProcessor):
         self.assertGreater(result['confidence'], 0.4)
     
     def test_anthropic_invoice_std6frkw(self):
-        """Test Anthropic invoice STD6FRKW-0001.pdf - Expected: $23.60."""
+        """Test Anthropic invoice STD6FRKW-0001.pdf - Expected: $23.60 converted to INR."""
         if not self.test_data_dir.exists():
             self.skipTest("Test data directory not found")
         
@@ -272,10 +276,40 @@ class TestKnownReceiptValidation(TestReceiptProcessor):
         
         result = self.processor.process_receipt(str(pdf_file))
         
-        # Validate expected values
+        # Validate expected values (USD converted to INR using rate 83.0)
+        expected_amount = 23.60 * 83.0  # 1958.8
         self.assertIsNone(result['error'])
-        self.assertEqual(result['amount'], 23.60)
+        self.assertAlmostEqual(result['amount'], expected_amount, places=1)
         self.assertEqual(result['category'], "Software & Subscriptions")
+
+
+class TestCurrencyConversion(TestReceiptProcessor):
+    """Test currency conversion functionality."""
+    
+    def test_usd_to_inr_conversion(self):
+        """Test USD to INR conversion with known exchange rate."""
+        # Test currency conversion method directly
+        amount_inr = self.processor._convert_to_inr(23.60, 'USD')
+        expected = 23.60 * self.processor.DEFAULT_USD_TO_INR  # 23.60 * 83.0 = 1958.8
+        self.assertAlmostEqual(amount_inr, expected, places=1)
+    
+    def test_inr_no_conversion(self):
+        """Test that INR amounts are not converted."""
+        amount = self.processor._convert_to_inr(1000.0, 'INR')
+        self.assertEqual(amount, 1000.0)
+    
+    def test_mixed_currency_extraction(self):
+        """Test extraction from text with mixed currencies."""
+        mixed_text = """
+        Service charge $20.00
+        Tax ₹100.50
+        Total amount $23.60 USD
+        """
+        
+        result = self.processor.extract_amount(mixed_text)
+        # Should prefer the USD amount converted to INR (highest value)
+        expected = 23.60 * self.processor.DEFAULT_USD_TO_INR
+        self.assertAlmostEqual(result, expected, places=1)
 
 
 class TestEdgeCases(TestReceiptProcessor):

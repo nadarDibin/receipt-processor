@@ -45,6 +45,13 @@ try:
 except ImportError:
     HAS_VISION_API = False
 
+# Currency conversion
+try:
+    import requests
+    HAS_REQUESTS = True
+except ImportError:
+    HAS_REQUESTS = False
+
 
 class ReceiptProcessor:
     """Main class for processing receipt images and extracting expense data."""
@@ -68,6 +75,9 @@ class ReceiptProcessor:
     # Total indicators
     TOTAL_KEYWORDS = ['grand total', 'total:', 'net total', 'amount due', 'subtotal', 'total', 'amount', 'grand']
     
+    # Default USD to INR exchange rate (fallback when API is unavailable)
+    DEFAULT_USD_TO_INR = 83.0
+    
     def __init__(self, use_vision_api: bool = False, debug: bool = False):
         """
         Initialize the Receipt Processor.
@@ -79,6 +89,7 @@ class ReceiptProcessor:
         self.use_vision_api = use_vision_api
         self.debug = debug
         self.categories = self._load_categories()
+        self.usd_to_inr_rate = self._get_exchange_rate()
         
         # Initialize Vision API client if requested and available
         if use_vision_api and HAS_VISION_API:
@@ -133,6 +144,37 @@ class ReceiptProcessor:
                            "microsoft", "google", "aws", "cloud"]
             }
         }
+    
+    def _get_exchange_rate(self) -> float:
+        """Get USD to INR exchange rate, fallback to default if API unavailable."""
+        if not HAS_REQUESTS:
+            self._debug_print(f"Using default exchange rate: {self.DEFAULT_USD_TO_INR}")
+            return self.DEFAULT_USD_TO_INR
+        
+        try:
+            # Use a free exchange rate API
+            response = requests.get(
+                "https://api.exchangerate-api.com/v4/latest/USD", 
+                timeout=5
+            )
+            if response.status_code == 200:
+                data = response.json()
+                rate = data['rates'].get('INR', self.DEFAULT_USD_TO_INR)
+                self._debug_print(f"Got live exchange rate: 1 USD = {rate} INR")
+                return rate
+        except Exception as e:
+            self._debug_print(f"Exchange rate API failed: {e}")
+        
+        self._debug_print(f"Using default exchange rate: {self.DEFAULT_USD_TO_INR}")
+        return self.DEFAULT_USD_TO_INR
+    
+    def _convert_to_inr(self, amount: float, currency: str) -> float:
+        """Convert amount to INR if needed."""
+        if currency.upper() == 'USD':
+            converted = amount * self.usd_to_inr_rate
+            self._debug_print(f"Converted ${amount} to ₹{converted:.2f} using rate {self.usd_to_inr_rate}")
+            return converted
+        return amount
     
     def _debug_print(self, message: str):
         """Print debug messages if debug mode is enabled."""
@@ -307,8 +349,8 @@ class ReceiptProcessor:
         
         raise ImportError("No OCR method available")
     
-    def extract_amount_from_line(self, line: str) -> List[float]:
-        """Extract all amounts from a single line."""
+    def extract_amount_from_line(self, line: str) -> List[Tuple[float, str]]:
+        """Extract all amounts from a single line with currency detection."""
         amounts = set()  # Use set to avoid duplicates
         found_positions = set()  # Track positions to avoid overlapping matches
         
@@ -323,13 +365,24 @@ class ReceiptProcessor:
                 try:
                     amount_str = match.group(1).replace(',', '')
                     amount = float(amount_str)
-                    if 1 <= amount <= 100000:  # Reasonable range
-                        amounts.add(amount)
+                    
+                    # Detect currency from the line context
+                    currency = 'INR'  # Default
+                    if '$' in line or 'USD' in line.upper():
+                        currency = 'USD'
+                        # Convert to INR
+                        amount = self._convert_to_inr(amount, currency)
+                    elif '₹' in line or 'Rs' in line or 'INR' in line.upper():
+                        currency = 'INR'
+                    
+                    if 1 <= amount <= 100000:  # Reasonable range (in INR)
+                        amounts.add((amount, currency))
                         found_positions.add((start, end))
                 except (ValueError, AttributeError):
                     continue
         
-        return sorted(list(amounts))  # Return sorted list
+        # Return sorted list of amounts (converted to INR)
+        return sorted([amount for amount, _ in amounts])
     
     def extract_amount(self, text: str) -> Optional[float]:
         """Extract the most likely total amount from receipt text."""
