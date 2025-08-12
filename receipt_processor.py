@@ -95,48 +95,149 @@ class ReceiptProcessor:
                 print("Warning: Vision API requested but not available")
 
     def _load_categories(self) -> Dict[str, Dict[str, Any]]:
-        """Load predefined expense categories."""
+        """Load predefined expense categories with hierarchical structure."""
         return {
             "Parking Reimbursement": {
-                "description": "Reimbursement for parking charges",
-                "keywords": ["parking", "park", "wework", "office parking"]
+                "description": "Reimbursement for parking charges alone - Wework office parking charges",
+                "keywords": ["parking", "park", "wework", "office parking", "parking fee", "parking charge"],
+                "expense_claim_types": {
+                    "Domestic Travel & Conveyance- Others - JASPL": {
+                        "description": "Business Travel / Parking Reimbursement",
+                        "keywords": ["parking", "park", "parking fee", "wework", "office parking", "parking charge"]
+                    }
+                }
             },
             "Repair & Maintenance": {
-                "description": "Laptop repair or urgent travel purchases",
-                "keywords": ["repair", "maintenance", "laptop", "fix", "service", "urgent"]
+                "description": "Any laptop repair or charges purchased on urgent scenarios during travel",
+                "keywords": ["repair", "maintenance", "laptop", "fix", "urgent", "charger", "adapter"],
+                "expense_claim_types": {
+                    "Repair & Maintenance-IT - JASPL": {
+                        "description": "Repair & Maintenance (Laptop service/ Purchase of charger)",
+                        "keywords": ["repair", "maintenance", "laptop", "charger", "adapter", "service", "fix", "urgent", "computer"]
+                    }
+                }
             },
-            "Printing & Courier": {
-                "description": "Stationary and printing expenses",
-                "keywords": ["printing", "print", "courier", "stationary", "stationery", "meeting", "paper", "ink"]
+            "Printing & courier": {
+                "description": "Expenses related to stationary items for meeting purposes",
+                "keywords": ["printing", "print", "courier", "stationary", "stationery", "meeting", "paper", "ink", "postage"],
+                "expense_claim_types": {
+                    "Printing, Stationery & Office Supplies - JASPL": {
+                        "description": "Printing, Stationery & Office Supplies",
+                        "keywords": ["printing", "print", "stationary", "stationery", "paper", "ink", "office supplies", "meeting"]
+                    },
+                    "Postage & Courier - JASPL": {
+                        "description": "Postage/ Courier Expense",
+                        "keywords": ["courier", "postage", "delivery", "shipping", "mail", "post"]
+                    }
+                }
             },
             "Workcation": {
-                "description": "Workcation claims",
-                "keywords": ["workcation", "workation", "remote work", "co-working"]
+                "description": "All Workcation Claim",
+                "keywords": ["workcation", "workation", "remote work", "co-working", "coworking"],
+                "expense_claim_types": {
+                    "Staff Welfare - JASPL": {
+                        "description": "Mobile/Home setup/Learning and development/ All workcation",
+                        "keywords": ["workcation", "workation", "remote work", "co-working", "coworking"]
+                    }
+                }
             },
-            "Business Travel": {
-                "description": "Travel - Domestic & Overseas",
-                "keywords": ["travel", "flight", "hotel", "cab", "taxi", "uber", "ola", "train", "bus",
-                             "makemytrip", "booking", "airbnb", "goibibo", "yatra"]
+            "Business travel": {
+                "description": "Travel - Both Domestic & Overseas",
+                "keywords": ["travel", "flight", "hotel", "cab", "taxi", "uber", "ola", "train", "bus", 
+                           "makemytrip", "booking", "airbnb", "goibibo", "yatra", "visa", "food", "meal"],
+                "expense_claim_types": {
+                    "Overseas Travel- Allowance - JASPL": {
+                        "description": "Business Travel (Overseas - Food)",
+                        "keywords": ["food", "meal", "restaurant", "dining", "breakfast", "lunch", "dinner", "overseas", "international"],
+                        "context": ["overseas", "international", "abroad", "foreign"]
+                    },
+                    "Overseas Travel- Others - JASPL": {
+                        "description": "Business Travel (Overseas - Visa)",
+                        "keywords": ["visa", "passport", "embassy", "consulate", "overseas", "international"],
+                        "context": ["overseas", "international", "abroad", "foreign"]
+                    },
+                    "Overseas Travel- Conveyance - JASPL": {
+                        "description": "Business Travel (Overseas - Cab cost/Travel Bills)",
+                        "keywords": ["cab", "taxi", "uber", "conveyance", "transport", "overseas", "international"],
+                        "context": ["overseas", "international", "abroad", "foreign"]
+                    },
+                    "Overseas Travel- Boarding & Lodging - JASPL": {
+                        "description": "Business Travel(Overseas -Laundry)",
+                        "keywords": ["hotel", "lodging", "accommodation", "laundry", "overseas", "international", "airbnb"],
+                        "context": ["overseas", "international", "abroad", "foreign"]
+                    },
+                    "Overseas Travel- Cost of Tickets - JASPL": {
+                        "description": "Business Travel (Overseas- Flight/Train/Bus)",
+                        "keywords": ["flight", "plane", "airline", "train", "bus", "ticket", "overseas", "international"],
+                        "context": ["overseas", "international", "abroad", "foreign"]
+                    },
+                    "Meal Allowance - JASPL": {
+                        "description": "Business Travel (Domestic - Food)",
+                        "keywords": ["food", "meal", "restaurant", "dining", "breakfast", "lunch", "dinner", "domestic"],
+                        "context": ["domestic", "local", "india", "indian"]
+                    },
+                    "Domestic Travel- Cost of Tickets - JASPL": {
+                        "description": "Business Travel (Domestic - Flight/Train/Bus)",
+                        "keywords": ["flight", "plane", "airline", "train", "bus", "ticket", "domestic", "makemytrip", "goibibo"],
+                        "context": ["domestic", "local", "india", "indian"]
+                    },
+                    "Domestic Travel- Boarding & Lodging - JASPL": {
+                        "description": "Business Travel (Domestic - Laundry)",
+                        "keywords": ["hotel", "lodging", "accommodation", "laundry", "domestic", "airbnb"],
+                        "context": ["domestic", "local", "india", "indian"]
+                    },
+                    "Conference/Meet expenses - JASPL": {
+                        "description": "Conference/Meet expenses",
+                        "keywords": ["conference", "meeting", "seminar", "workshop", "event", "expo"]
+                    },
+                    "Travel Insurance-JASPL": {
+                        "description": "Business Travel (Insurance)",
+                        "keywords": ["insurance", "travel insurance", "coverage"]
+                    },
+                    "Telephone expense-JASPL": {
+                        "description": "Business Travel (Mobile Recharge)",
+                        "keywords": ["mobile", "recharge", "phone", "telephone", "roaming", "sim"]
+                    }
+                }
             },
-            "Learning & Development": {
-                "description": "Books and courses (₹25,000 limit)",
-                "keywords": ["book", "course", "learning", "training", "development", "education",
-                             "skill", "certification", "amazon", "kindle", "udemy", "coursera"]
+            "Learning & development": {
+                "description": "Books purchased, learning and development for employee (25000 INR)",
+                "amount_limit": 25000,
+                "keywords": ["book", "course", "learning", "training", "development", "education", 
+                           "skill", "certification", "amazon", "kindle", "udemy", "coursera"],
+                "expense_claim_types": {
+                    "Staff Welfare - JASPL": {
+                        "description": "Mobile/Home setup/Learning and development/ All workcation",
+                        "keywords": ["book", "course", "learning", "training", "development", "education", 
+                                   "skill", "certification", "amazon", "kindle", "udemy", "coursera"]
+                    }
+                }
             },
-            "Home Workstation": {
-                "description": "Home office setup (₹25,000 one-time)",
-                "keywords": ["furniture", "desk", "chair", "monitor", "workstation", "home office",
-                             "setup", "table", "ergonomic"]
+            "Home workstation": {
+                "description": "Furniture or office setup in home - one time for an employee (25000 INR)",
+                "amount_limit": 25000,
+                "keywords": ["furniture", "desk", "chair", "monitor", "workstation", "home office", 
+                           "setup", "table", "ergonomic", "home"],
+                "expense_claim_types": {
+                    "Staff Welfare - JASPL": {
+                        "description": "Mobile/Home setup/Learning and development/ All workcation",
+                        "keywords": ["furniture", "desk", "chair", "monitor", "workstation", "home office", 
+                                   "setup", "table", "ergonomic", "home"]
+                    }
+                }
             },
             "Mobile Handset": {
-                "description": "Mobile purchase (₹42,000 per 24 months)",
-                "keywords": ["mobile", "phone", "smartphone", "handset", "iphone", "samsung",
-                             "oneplus", "xiaomi", "realme"]
-            },
-            "Software & Subscriptions": {
-                "description": "Software licenses and subscriptions",
-                "keywords": ["software", "license", "subscription", "claude", "chatgpt", "adobe",
-                             "microsoft", "google", "aws", "cloud"]
+                "description": "Mobile purchase reimbursement for 42000 INR - 24 months once",
+                "amount_limit": 42000,
+                "keywords": ["mobile", "phone", "smartphone", "handset", "iphone", "samsung", 
+                           "oneplus", "xiaomi", "realme"],
+                "expense_claim_types": {
+                    "Staff Welfare - JASPL": {
+                        "description": "Mobile/Home setup/Learning and development/ All workcation",
+                        "keywords": ["mobile", "phone", "smartphone", "handset", "iphone", "samsung", 
+                                   "oneplus", "xiaomi", "realme"]
+                    }
+                }
             }
         }
 
@@ -443,31 +544,141 @@ class ReceiptProcessor:
 
         return selected[0]
 
-    def categorize_receipt(self, text: str, amount: Optional[float] = None) -> Tuple[str, float]:
+    def categorize_receipt(self, text: str, amount: Optional[float] = None) -> Tuple[str, str, float]:
         """
-        Categorize receipt based on text content.
+        Categorize receipt using two-stage hierarchical classification.
         
         Returns:
-            Tuple of (category_name, confidence_score)
+            Tuple of (claim_type, expense_claim_type, confidence_score)
         """
         if not text:
-            return "Uncategorized", 0.0
+            return "Uncategorized", "Uncategorized", 0.0
 
         text_lower = text.lower()
 
-        # Score each category
+        # Stage 1: Determine Claim_Type
+        claim_type, claim_confidence = self._classify_claim_type(text_lower, amount)
+        
+        if claim_type == "Uncategorized":
+            return "Uncategorized", "Uncategorized", 0.0
+
+        # Stage 2: Determine Expense_Claim_Type within the Claim_Type
+        expense_claim_type, expense_confidence = self._classify_expense_claim_type(
+            claim_type, text_lower, amount
+        )
+        
+        # Combined confidence (weighted average)
+        combined_confidence = (claim_confidence * 0.6) + (expense_confidence * 0.4)
+        
+        return claim_type, expense_claim_type, combined_confidence
+
+    def _classify_claim_type(self, text_lower: str, amount: Optional[float] = None) -> Tuple[str, float]:
+        """Stage 1: Classify the main Claim_Type."""
         scores = {}
-        for category, info in self.categories.items():
+        
+        for claim_type, info in self.categories.items():
+            # Keyword scoring
+            keyword_score = sum(1 for keyword in info['keywords'] if keyword.lower() in text_lower)
+            
+            # Amount validation bonus
+            amount_bonus = 0
+            if amount and 'amount_limit' in info:
+                if amount <= info['amount_limit']:
+                    amount_bonus = 1  # Bonus for being within limit
+                else:
+                    keyword_score *= 0.5  # Penalty for exceeding limit
+            
+            scores[claim_type] = keyword_score + amount_bonus
+
+        if not scores or max(scores.values()) == 0:
+            return "Uncategorized", 0.0
+
+        best_claim_type = max(scores, key=scores.get)
+        max_possible_score = len(self.categories[best_claim_type]['keywords']) + (1 if 'amount_limit' in self.categories[best_claim_type] else 0)
+        confidence = scores[best_claim_type] / max_possible_score
+        
+        # Minimum confidence threshold
+        if confidence < 0.1:
+            return "Uncategorized", 0.0
+            
+        return best_claim_type, confidence
+
+    def _classify_expense_claim_type(self, claim_type: str, text_lower: str, amount: Optional[float] = None) -> Tuple[str, float]:
+        """Stage 2: Classify the specific Expense_Claim_Type within a Claim_Type."""
+        expense_types = self.categories[claim_type]['expense_claim_types']
+        
+        # Special handling for Business travel (context-aware)
+        if claim_type == "Business travel":
+            return self._classify_travel_expense_type(text_lower, expense_types)
+        
+        # Regular classification for other categories
+        scores = {}
+        for expense_type, info in expense_types.items():
             score = sum(1 for keyword in info['keywords'] if keyword.lower() in text_lower)
-            scores[category] = score
+            scores[expense_type] = score
 
-        # Find best match
-        if scores and max(scores.values()) > 0:
-            best_category = max(scores, key=scores.get)
-            confidence = scores[best_category] / len(self.categories[best_category]['keywords'])
-            return best_category, confidence
+        if not scores or max(scores.values()) == 0:
+            # Default to first expense type if no specific match
+            default_expense_type = list(expense_types.keys())[0]
+            return default_expense_type, 0.5
 
-        return "Uncategorized", 0.0
+        best_expense_type = max(scores, key=scores.get)
+        max_possible_score = len(expense_types[best_expense_type]['keywords'])
+        confidence = scores[best_expense_type] / max_possible_score
+        
+        return best_expense_type, confidence
+
+    def _classify_travel_expense_type(self, text_lower: str, expense_types: Dict) -> Tuple[str, float]:
+        """Context-aware classification for Business travel expenses."""
+        # Detect domestic vs overseas context
+        overseas_indicators = ['overseas', 'international', 'abroad', 'foreign', 'visa', 'passport']
+        domestic_indicators = ['domestic', 'local', 'india', 'indian', 'makemytrip', 'goibibo']
+        
+        is_overseas = any(indicator in text_lower for indicator in overseas_indicators)
+        is_domestic = any(indicator in text_lower for indicator in domestic_indicators)
+        
+        # If no clear geographic context, try to infer from other clues
+        if not is_overseas and not is_domestic:
+            # Indian travel booking sites suggest domestic
+            if any(site in text_lower for site in ['makemytrip', 'goibibo', 'yatra']):
+                is_domestic = True
+            # International airlines or cities might suggest overseas
+            elif any(term in text_lower for term in ['emirates', 'lufthansa', 'singapore', 'bangkok']):
+                is_overseas = True
+        
+        # Score expense types based on keywords and context
+        scores = {}
+        for expense_type, info in expense_types.items():
+            keyword_score = sum(1 for keyword in info['keywords'] if keyword.lower() in text_lower)
+            
+            # Context bonus/penalty
+            context_bonus = 0
+            if 'context' in info:
+                if is_overseas and any(ctx in info['context'] for ctx in ['overseas', 'international']):
+                    context_bonus = 2
+                elif is_domestic and any(ctx in info['context'] for ctx in ['domestic', 'local']):
+                    context_bonus = 2
+                elif is_overseas and any(ctx in info['context'] for ctx in ['domestic', 'local']):
+                    keyword_score *= 0.2  # Strong penalty for wrong context
+                elif is_domestic and any(ctx in info['context'] for ctx in ['overseas', 'international']):
+                    keyword_score *= 0.2  # Strong penalty for wrong context
+            
+            scores[expense_type] = keyword_score + context_bonus
+
+        if not scores or max(scores.values()) == 0:
+            # Default based on context
+            if is_overseas:
+                return "Overseas Travel- Cost of Tickets - JASPL", 0.3
+            elif is_domestic:
+                return "Domestic Travel- Cost of Tickets - JASPL", 0.3
+            else:
+                return "Conference/Meet expenses - JASPL", 0.2
+
+        best_expense_type = max(scores, key=scores.get)
+        max_possible_score = len(expense_types[best_expense_type]['keywords']) + 2  # Include context bonus
+        confidence = min(scores[best_expense_type] / max_possible_score, 1.0)
+        
+        return best_expense_type, confidence
 
     def process_receipt(self, image_path: str) -> Dict[str, Any]:
         """Process a single receipt and extract information."""
@@ -492,7 +703,8 @@ class ReceiptProcessor:
                 return {
                     'file': filename,
                     'amount': None,
-                    'category': 'Error',
+                    'claim_type': 'Error',
+                    'expense_claim_type': 'Error',
                     'confidence': 0.0,
                     'error': 'No text extracted',
                     'extracted_text': ''
@@ -500,12 +712,13 @@ class ReceiptProcessor:
 
             # Extract amount and categorize
             amount = self.extract_amount(text)
-            category, confidence = self.categorize_receipt(text, amount)
+            claim_type, expense_claim_type, confidence = self.categorize_receipt(text, amount)
 
             return {
                 'file': filename,
                 'amount': amount,
-                'category': category,
+                'claim_type': claim_type,
+                'expense_claim_type': expense_claim_type,
                 'confidence': confidence,
                 'error': None,
                 'extracted_text': text[:200] + '...' if len(text) > 200 else text
@@ -520,7 +733,8 @@ class ReceiptProcessor:
             return {
                 'file': filename,
                 'amount': None,
-                'category': 'Error',
+                'claim_type': 'Error',
+                'expense_claim_type': 'Error',
                 'confidence': 0.0,
                 'error': error_msg,
                 'extracted_text': ''
@@ -554,7 +768,9 @@ class ReceiptProcessor:
             # Print summary
             status = "✓" if result['error'] is None else "✗"
             amount_str = f"₹{result['amount']:,.2f}" if result['amount'] else "Not found"
-            print(f"{status} Amount: {amount_str} | Category: {result['category']} ({result['confidence']:.0%})")
+            claim_type = result.get('claim_type', 'N/A')
+            expense_claim_type = result.get('expense_claim_type', 'N/A')
+            print(f"{status} Amount: {amount_str} | Claim: {claim_type} | Expense: {expense_claim_type} ({result['confidence']:.0%})")
 
         # Save results
         self.save_to_csv(results, output_csv)
@@ -574,7 +790,7 @@ class ReceiptProcessor:
             print("No results to save")
             return
 
-        fieldnames = ['file', 'amount', 'category', 'confidence', 'error', 'extracted_text']
+        fieldnames = ['file', 'amount', 'claim_type', 'expense_claim_type', 'confidence', 'error', 'extracted_text']
 
         with open(output_file, 'w', newline='', encoding='utf-8') as csvfile:
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
