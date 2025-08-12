@@ -150,12 +150,13 @@ class TestCategorization(TestReceiptProcessor):
         travel expenses
         """
 
-        category, confidence = self.processor.categorize_receipt(travel_text)
-        self.assertEqual(category, "Business Travel")
+        claim_type, expense_claim_type, confidence = self.processor.categorize_receipt(travel_text)
+        self.assertEqual(claim_type, "Business travel")
+        self.assertIn("Travel", expense_claim_type)  # Should be one of the travel expense types
         self.assertGreater(confidence, 0.2)  # Adjusted expectation
 
     def test_categorize_software_subscription(self):
-        """Test software subscription categorization."""
+        """Test software subscription categorization - should be uncategorized."""
         software_text = """
         Anthropic, PBC
         Claude Pro subscription
@@ -163,16 +164,18 @@ class TestCategorization(TestReceiptProcessor):
         AI service
         """
 
-        category, confidence = self.processor.categorize_receipt(software_text)
-        self.assertEqual(category, "Software & Subscriptions")
-        self.assertGreater(confidence, 0)
+        claim_type, expense_claim_type, confidence = self.processor.categorize_receipt(software_text)
+        self.assertEqual(claim_type, "Uncategorized")
+        self.assertEqual(expense_claim_type, "Uncategorized")
+        self.assertEqual(confidence, 0.0)
 
     def test_categorize_uncategorized(self):
         """Test uncategorized receipts."""
         generic_text = "Random receipt with no specific keywords"
 
-        category, confidence = self.processor.categorize_receipt(generic_text)
-        self.assertEqual(category, "Uncategorized")
+        claim_type, expense_claim_type, confidence = self.processor.categorize_receipt(generic_text)
+        self.assertEqual(claim_type, "Uncategorized")
+        self.assertEqual(expense_claim_type, "Uncategorized")
         self.assertEqual(confidence, 0.0)
 
     def test_categorize_multiple_keywords(self):
@@ -184,8 +187,9 @@ class TestCategorization(TestReceiptProcessor):
         Business travel expenses
         """
 
-        category, confidence = self.processor.categorize_receipt(travel_text)
-        self.assertEqual(category, "Business Travel")
+        claim_type, expense_claim_type, confidence = self.processor.categorize_receipt(travel_text)
+        self.assertEqual(claim_type, "Business travel")
+        self.assertIn("Travel", expense_claim_type)  # Should be one of the travel expense types
         # Should have high confidence due to multiple matches
 
 
@@ -245,7 +249,8 @@ class TestKnownReceiptValidation(TestReceiptProcessor):
         # Validate expected values
         self.assertIsNone(result['error'])
         self.assertEqual(result['amount'], 7202.0)
-        self.assertEqual(result['category'], "Business Travel")
+        self.assertEqual(result['claim_type'], "Business travel")
+        self.assertIn("Travel", result['expense_claim_type'])
         self.assertGreater(result['confidence'], 0.4)
         self.assertIn("MAKEMYTRIP", result['extracted_text'])
 
@@ -263,7 +268,8 @@ class TestKnownReceiptValidation(TestReceiptProcessor):
         # Validate expected values
         self.assertIsNone(result['error'])
         self.assertEqual(result['amount'], 6950.0)
-        self.assertEqual(result['category'], "Business Travel")
+        self.assertEqual(result['claim_type'], "Business travel")
+        self.assertIn("Travel", result['expense_claim_type'])
         self.assertGreater(result['confidence'], 0.4)
 
     def test_anthropic_invoice_std6frkw(self):
@@ -281,7 +287,8 @@ class TestKnownReceiptValidation(TestReceiptProcessor):
         expected_amount = 23.60 * 83.0  # 1958.8
         self.assertIsNone(result['error'])
         self.assertAlmostEqual(result['amount'], expected_amount, places=1)
-        self.assertEqual(result['category'], "Software & Subscriptions")
+        self.assertEqual(result['claim_type'], "Uncategorized")  # Software subscriptions not in official categories
+        self.assertEqual(result['expense_claim_type'], "Uncategorized")
 
 
 class TestCurrencyConversion(TestReceiptProcessor):
@@ -336,7 +343,8 @@ class TestEdgeCases(TestReceiptProcessor):
         """Test handling when no text is extracted."""
         with patch.object(self.processor, 'extract_text', return_value=""):
             result = self.processor.process_receipt("dummy.pdf")
-            self.assertEqual(result['category'], 'Error')
+            self.assertEqual(result['claim_type'], 'Error')
+            self.assertEqual(result['expense_claim_type'], 'Error')
             self.assertEqual(result['error'], 'No text extracted')
 
     def test_no_amount_found(self):
@@ -365,7 +373,7 @@ class TestBatchProcessing(TestReceiptProcessor):
 
             with open(output_csv, 'r', encoding='utf-8') as f:
                 content = f.read()
-                self.assertIn('file,amount,category', content)  # Header
+                self.assertIn('file,amount,claim_type,expense_claim_type,confidence', content)  # Header
                 self.assertIn('NF90196357902608.pdf', content)
                 self.assertIn('7202.00', content)
 
